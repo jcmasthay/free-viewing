@@ -15,17 +15,23 @@ end
 win = ptb.Window( [0, 0, 1280, 720] );
 open( win );
 
+clip_dur = 10;
+
 err = [];
 try 
   vid_src_p = fullfile( project_directory, 'videos/Monkey Thieves S2E2.avi' );
 
   % start + stop times within respective clips
   [start_ts, stop_ts] = to_clip_subsets( clip_subset.Start, clip_subset.Stop );
-
-  % same video in this case for each start / stop time
-  vid_src_ps = repmat( {vid_src_p}, numel(start_ts), 1 );
   
-  video_task( win, vid_src_ps, start_ts, stop_ts );
+  for i = 1:numel(start_ts)
+    [starts, stops] = partition_clip_subsets( start_ts{i}, stop_ts{i}, clip_dur );
+    
+    % same video in this case for each start / stop time
+    vid_src_ps = repmat( {vid_src_p}, numel(starts), 1 );
+
+    video_task( win, vid_src_ps, starts, stops );
+  end
 catch err
   %
 end
