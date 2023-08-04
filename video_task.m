@@ -1,4 +1,7 @@
-function video_task()
+function video_task(win, vid_src_ps, start_ts, stop_ts)
+
+assert( isequal(numel(vid_src_ps), numel(start_ts), numel(stop_ts)) ...
+  , 'Expected 1 start and stop time per video clip file.' );
 
 proj_p = fileparts( which(mfilename) );
 [data_p, data_file_name] = data_file_paths( proj_p );
@@ -7,7 +10,9 @@ shared_utils.io.require_dir( data_p );
 use_eyelink = false;
 save_data = true;
 use_reward = true;
+
 reward_dur_s = 0.2;
+reward_ipi_s = 2;  % inter-pulse-interval
 
 el_interface = EyelinkInterface();
 el_interface.bypassed = ~use_eyelink;
@@ -19,26 +24,6 @@ el_sync.bypassed = ~use_eyelink;
 rwd_interface = RewardInterface( ~use_reward );
 
 %{
-  stimuli
-%}
-
-vid_src_p = fullfile( proj_p, 'videos/clip_0.mp4.avi' );
-
-% start + stop times within respective clips
-start_ts = [ 1 * 60 + 10; 2 * 60 + 15 ];
-stop_ts = start_ts + [4; 5];
-
-% same video in this case for each start / stop time
-vid_src_ps = repmat( {vid_src_p}, numel(start_ts), 1 );
-
-%{
-  window
-%}
-
-win = ptb.Window( [0, 0, 1280, 720] );
-open( win );
-
-%{
   task
 %}
 
@@ -46,12 +31,24 @@ open( win );
 t0 = tic;
 time_cb = @() toc( t0 );
 
+% triggers reward
+rwd_cb = @() deliver_reward( rwd_interface, 1, reward_dur_s );
+
 % play the clips
 err = [];
+
 try
-  rwd_cb = @() deliver_reward( rwd_interface, 1, reward_dur_s );
-  clip_block( win, rwd_cb, el_sync, vid_src_ps, start_ts, stop_ts, @task_loop, time_cb );
+  % for each clip
+  for i = 1:numel(start_ts)
+    play_movie( ...
+        win, vid_src_ps{i}, start_ts(i), stop_ts(i) ...
+      , @(frame) frame_sync_loop_cb(frame, vid_src_ps{i}, time_cb) ...
+    );
+    
+    iti( win, @task_loop, time_cb, rwd_cb, reward_ipi_s );
+  end
 catch err
+  % error handled later
 end
 
 %{
@@ -65,8 +62,6 @@ if ( save_data )
   save( fullfile(data_p, data_file_name), 'file' );
 end
 
-close( win );
-
 if ( ~isempty(err) )
   rethrow( err );
 end
@@ -75,39 +70,36 @@ end
   local functions
 %}
 
+function frame_sync_loop_cb(frame, vid_p, time_cb)
+  task_loop();
+  send_frame_info( el_sync, vid_p, frame, time_cb() );
+end
+
 function task_loop()
   update( rwd_interface );
 end
 
 end
 
-function clip_block(win, rwd_cb, el_sync, vid_ps, start_ts, stop_ts, loop_cb, time_cb)
+function iti(win, loop_cb, time_cb, rwd_cb, rwd_ipi)
 
-for i = 1:numel(start_ts)
-  loop = @(frame) sync_loop_cb(i, frame);
-  play_movie( win, vid_ps{i}, start_ts(i), stop_ts(i), loop );
+% pause between clips
+pause_time = 5;
+t0 = time_cb();
 
-  % pause between clips
-  pause_time = 5;
-  t0 = time_cb();
-  
-  % reward timing
-  last_reward_t = -inf;
-  reward_ipi = 2; % time between pulses
-  
-  while ( time_cb() - t0 < pause_time )
-    flip( win );
-    t = time_cb();
-    if ( t - last_reward_t > reward_ipi )
-      rwd_cb();
-      last_reward_t = t;
-    end
-  end
-end
+% reward timing
+last_reward_t = -inf;
 
-function sync_loop_cb(i, frame)
+while ( time_cb() - t0 < pause_time )
   loop_cb();
-  send_frame_info( el_sync, vid_ps{i}, frame, time_cb() );
+
+  flip( win );
+  t = time_cb();
+
+  if ( t - last_reward_t > rwd_ipi )
+    rwd_cb();
+    last_reward_t = t;
+  end
 end
 
 end
