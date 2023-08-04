@@ -2,8 +2,9 @@ function video_task()
 
 proj_p = fileparts( which(mfilename) );
 [data_p, data_file_name] = data_file_paths( proj_p );
+shared_utils.io.require_dir( data_p );
 
-use_eyelink = true;
+use_eyelink = false;
 save_data = true;
 
 el_interface = EyelinkInterface();
@@ -17,7 +18,7 @@ el_sync.bypassed = ~use_eyelink;
   stimuli
 %}
 
-vid_src_p = fullfile( proj_p, 'videos/clips/clip_0.mp4.avi' );
+vid_src_p = fullfile( proj_p, 'videos/clip_0.mp4.avi' );
 
 % start + stop times within respective clips
 start_ts = [ 1 * 60 + 10; 2 * 60 + 15 ];
@@ -30,7 +31,7 @@ vid_src_ps = repmat( {vid_src_p}, numel(start_ts), 1 );
   window
 %}
 
-win = ptb.Window( [0, 0, 800, 800] );
+win = ptb.Window( [0, 0, 1280, 720] );
 open( win );
 
 % does nothing for now
@@ -41,10 +42,10 @@ t0 = tic;
 time_cb = @() toc( t0 );
 
 % play the clips
+err = [];
 try
-  clip_block( win, vid_src_ps, start_ts, stop_ts, loop_cb, time_cb );
+  clip_block( win, el_sync, vid_src_ps, start_ts, stop_ts, loop_cb, time_cb );
 catch err
-  warning( err.message );
 end
 
 shutdown( el_interface );
@@ -56,12 +57,16 @@ end
 
 close( win );
 
+if ( ~isempty(err) )
+  rethrow( err );
+end
+
 end
 
 function clip_block(win, el_sync, vid_ps, start_ts, stop_ts, loop_cb, time_cb)
 
 for i = 1:numel(start_ts)
-  play_movie( win, vid_ps{i}, start_ts(i), stop_ts(i), @() sync_loop_cb(i) );
+  play_movie( win, vid_ps{i}, start_ts(i), stop_ts(i), @(frame) sync_loop_cb(i, frame) );
 
   % pause between clips
   pause_time = 5;
@@ -71,7 +76,7 @@ for i = 1:numel(start_ts)
   end
 end
 
-function sync_loop_cb(i)
+function sync_loop_cb(i, frame)
   loop_cb();
   send_frame_info( el_sync, vid_ps{i}, frame, time_cb() );
 end
