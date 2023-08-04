@@ -6,6 +6,8 @@ shared_utils.io.require_dir( data_p );
 
 use_eyelink = false;
 save_data = true;
+use_reward = true;
+reward_dur_s = 0.2;
 
 el_interface = EyelinkInterface();
 el_interface.bypassed = ~use_eyelink;
@@ -13,6 +15,8 @@ initialize( el_interface );
 
 el_sync = EyelinkSync();
 el_sync.bypassed = ~use_eyelink;
+
+rwd_interface = RewardInterface( ~use_reward );
 
 %{
   stimuli
@@ -34,8 +38,9 @@ vid_src_ps = repmat( {vid_src_p}, numel(start_ts), 1 );
 win = ptb.Window( [0, 0, 1280, 720] );
 open( win );
 
-% does nothing for now
-loop_cb = @(frame) 0;
+%{
+  task
+%}
 
 % gets the current time
 t0 = tic;
@@ -44,9 +49,14 @@ time_cb = @() toc( t0 );
 % play the clips
 err = [];
 try
-  clip_block( win, el_sync, vid_src_ps, start_ts, stop_ts, loop_cb, time_cb );
+  rwd_cb = @() deliver_reward( rwd_interface, 1, reward_dur_s );
+  clip_block( win, rwd_cb, el_sync, vid_src_ps, start_ts, stop_ts, @task_loop, time_cb );
 catch err
 end
+
+%{
+  shutdown
+%}
 
 shutdown( el_interface );
 
@@ -61,18 +71,37 @@ if ( ~isempty(err) )
   rethrow( err );
 end
 
+%{
+  local functions
+%}
+
+function task_loop()
+  update( rwd_interface );
 end
 
-function clip_block(win, el_sync, vid_ps, start_ts, stop_ts, loop_cb, time_cb)
+end
+
+function clip_block(win, rwd_cb, el_sync, vid_ps, start_ts, stop_ts, loop_cb, time_cb)
 
 for i = 1:numel(start_ts)
-  play_movie( win, vid_ps{i}, start_ts(i), stop_ts(i), @(frame) sync_loop_cb(i, frame) );
+  loop = @(frame) sync_loop_cb(i, frame);
+  play_movie( win, vid_ps{i}, start_ts(i), stop_ts(i), loop );
 
   % pause between clips
   pause_time = 5;
   t0 = time_cb();
+  
+  % reward timing
+  last_reward_t = -inf;
+  reward_ipi = 2; % time between pulses
+  
   while ( time_cb() - t0 < pause_time )
     flip( win );
+    t = time_cb();
+    if ( t - last_reward_t > reward_ipi )
+      rwd_cb();
+      last_reward_t = t;
+    end
   end
 end
 
