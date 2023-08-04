@@ -6,8 +6,8 @@ try
   vid_src_p = fullfile( proj_p, 'videos/clip_0.mp4.avi' );
 
   % start + stop times within respective clips
-  start_ts = [ 1 * 60 + 10; 2 * 60 + 15 ];
-  stop_ts = start_ts + [4; 5];
+  start_ts = { [1 * 60 + 10, 2 * 60 + 15] };
+  stop_ts = { start_ts{1} + [4, 5] };
 
   % same video in this case for each start / stop time
   vid_src_ps = repmat( {vid_src_p}, numel(start_ts), 1 );

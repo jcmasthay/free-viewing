@@ -1,34 +1,45 @@
-function play_movie(win, movie_file, start_time, end_time, loop_cb)
+function play_movie(win, movie_file, start_times, end_times, loop_cb)
 
 if ( isa(win, 'ptb.Window') )
   win = win.WindowHandle;
 end
 
-[movie, ~, fps] = Screen( 'OpenMovie', win, movie_file );
-
-if ( isempty(start_time) || isempty(end_time) )
-  num_frames = inf;
+if ( isempty(start_times) || isempty(end_times) )
+  % full segment
+  num_segments = 1;
 else
-  num_frames = max( 1, floor(end_time - start_time) * fps );
-  Screen( 'SetMovieTimeIndex', movie, start_time );
+  num_segments = numel( start_times );
 end
 
+[movie, ~, fps] = Screen( 'OpenMovie', win, movie_file );
 Screen( 'PlayMovie', movie, 1 );
-played_frames = 0;
 
-while played_frames < num_frames
-  loop_cb( played_frames );
-  
-  tex = Screen( 'GetMovieImage', win, movie );
-  if ( tex <= 0 )
-    break
+for ci = 1:num_segments
+  played_frames = 0;
+
+  if ( isempty(start_times) || isempty(end_times) )
+    num_frames = inf;
+    start_t = 0;
+  else
+    num_frames = max( 1, floor(end_times(ci) - start_times(ci)) * fps );
+    start_t = start_times(ci);
+    Screen( 'SetMovieTimeIndex', movie, start_t );
   end
 
-  Screen( 'DrawTexture', win, tex );
-  Screen( 'Flip', win );
-  Screen( 'Close', tex );
-  
-  played_frames = played_frames + 1;
+  while played_frames < num_frames
+    loop_cb( start_t + played_frames / fps );
+
+    tex = Screen( 'GetMovieImage', win, movie );
+    if ( tex <= 0 )
+      break
+    end
+
+    Screen( 'DrawTexture', win, tex );
+    Screen( 'Flip', win );
+    Screen( 'Close', tex );
+
+    played_frames = played_frames + 1;
+  end
 end
 
 Screen( 'PlayMovie', movie, 0 );

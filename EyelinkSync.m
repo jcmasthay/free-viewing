@@ -16,13 +16,13 @@ classdef EyelinkSync < handle
       ts = obj.sync_ts;
     end
     
-    function send_frame_info(obj, vid_id, frame_index, curr_t)
+    function send_frame_info(obj, vid_id, vid_t, curr_t)
       if ( obj.bypassed )
         return
       end
       
       obj.sync_ts(end+1) = curr_t;
-      message = sprintf( '%s | %d | %d', vid_id, frame_index, numel(obj.sync_ts) );
+      message = sprintf( '%s | %0.4f | %d', vid_id, vid_t, numel(obj.sync_ts) );
       Eyelink( 'Message', message );
     end
   end
