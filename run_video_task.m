@@ -1,9 +1,12 @@
+clip_table = shared_utils.io.fload( fullfile(project_directory, 'data/clip_table.mat') );
+clip_subset = clip_table(clip_table.VideoFilename == 'Monkey Thieves S2E2', :);
+
 win = ptb.Window( [0, 0, 1280, 720] );
 open( win );
 
 err = [];
 try 
-  vid_src_p = fullfile( proj_p, 'videos/clip_0.mp4.avi' );
+  vid_src_p = fullfile( project_directory, 'videos/clip_0.mp4.avi' );
 
   % start + stop times within respective clips
   start_ts = { [1 * 60 + 10, 2 * 60 + 15] };
