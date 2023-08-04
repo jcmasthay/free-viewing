@@ -3,7 +3,7 @@ open( win );
 
 err = [];
 try 
-  vid_src_p = fullfile( proj_p, 'videos/clip_0.mp4.avi' );
+  vid_src_p = fullfile( fileparts(which(mfilename)), 'videos/clip_0.mp4.avi' );
 
   % start + stop times within respective clips
   start_ts = { [1 * 60 + 10, 2 * 60 + 15] };
