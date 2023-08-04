@@ -1,4 +1,4 @@
-data_p = '/Users/nick/Downloads/Monkey Clip Submission Form V2 (Responses).xlsx';
+data_p = fullfile( project_directory(), 'data/Monkey Clip Submission Form V2 (Responses).xlsx' );
 clip_xls = readtable( data_p );
 
 %%
@@ -42,3 +42,15 @@ dst_tbl = table( ...
   , clip_xls.SelectEpisode_1 ...  % @note
   , 'va', {'Start', 'Stop', 'SourceMovie', 'Season', 'Episode'} ...
 );
+
+clip_fnames = strings( size(dst_tbl, 1), 1 );
+
+is_monk_th = contains( dst_tbl.SourceMovie, 'Monkey Thieves' );
+clip_fnames(is_monk_th) = compose( "Monkey Thieves S%dE%d" ...
+  , dst_tbl.Season(is_monk_th), dst_tbl.Episode(is_monk_th) );
+
+dst_tbl.VideoFilename = clip_fnames;
+
+if ( 1 )
+  save( fullfile(project_directory, 'data/clip_table.mat'), 'dst_tbl' );
+end

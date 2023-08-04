@@ -9,7 +9,7 @@ shared_utils.io.require_dir( data_p );
 
 use_eyelink = false;
 save_data = true;
-use_reward = true;
+use_reward = false;
 
 reward_dur_s = 0.2;
 reward_ipi_s = 2;  % inter-pulse-interval
