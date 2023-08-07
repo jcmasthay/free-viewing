@@ -1,4 +1,6 @@
-if ( 0 )
+use_single_specified_video = false;
+
+if ( use_single_specified_video )
   vid_ps = {'/Users/nick/source/changlab/jamie/fv_task/videos/clip_0.mp4.avi'};
 else
   vid_ps = shared_utils.io.find( fullfile(project_directory, 'videos'), '.avi' );
