@@ -1,4 +1,12 @@
-function make_video_clips(vid_path, output_path, start_end_times, video_profile, do_scramble)
+function make_video_clips(vid_path, output_path, start_end_times, video_profile, transform_frame)
+
+if ( nargin < 5 || isempty(transform_frame) )
+  transform_frame = @(x) x;
+end
+
+if ( isempty(video_profile) )
+  video_profile = 'Motion JPEG AVI';
+end
 
 video_reader = VideoReader( vid_path );
 
@@ -9,7 +17,7 @@ if ( isempty(start_end_times) )
   video_writer = open_video_writer( video_reader, output_p, video_profile );
   
   while ( hasFrame(video_reader) )
-    read_write_frame( video_reader, video_writer, do_scramble );
+    read_write_frame( video_reader, video_writer, transform_frame );
   end
 else
   % Movie clips
@@ -25,7 +33,7 @@ else
     num_frames = max( 1, floor((end_s(i) - start_s(i)) * video_reader.FrameRate) );
 
     for j = 1:num_frames
-      read_write_frame( video_reader, video_writer, do_scramble );
+      read_write_frame( video_reader, video_writer, transform_frame );
     end
 
     fprintf( ' Done\n' );
@@ -34,14 +42,10 @@ end
 
 end
 
-function read_write_frame(reader, writer, do_scramble)
+function read_write_frame(reader, writer, transform_frame)
 
 frame = readFrame( reader );
-
-if ( do_scramble )
-  frame = reshape( frame(randperm(numel(frame))), size(frame) );
-end
-
+frame = transform_frame( frame );
 writeVideo( writer, frame );
 
 end
