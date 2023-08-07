@@ -1,5 +1,7 @@
 function video_task(win, vid_src_ps, start_ts, stop_ts)
 
+vid_src_ps = cellstr( vid_src_ps );
+
 assert( isequal(numel(vid_src_ps), numel(start_ts), numel(stop_ts)) ...
   , 'Expected 1 start and stop time per video clip file.' );
 
@@ -41,7 +43,7 @@ try
   % for each clip
   for i = 1:numel(start_ts)
     play_movie( ...
-        win, vid_src_ps{i}, start_ts{i}, stop_ts{i} ...
+        win, vid_src_ps{i}, start_ts(i), stop_ts(i) ...
       , @(frame) frame_sync_loop_cb(frame, vid_src_ps{i}, time_cb) ...
     );
     
