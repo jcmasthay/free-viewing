@@ -51,6 +51,20 @@ clip_fnames(is_monk_th) = compose( "Monkey Thieves S%dE%d" ...
 
 dst_tbl.VideoFilename = clip_fnames;
 
+dst_tbl.Start = convert_clip_timestamps_to_seconds( dst_tbl.Start );
+dst_tbl.Stop = convert_clip_timestamps_to_seconds( dst_tbl.Stop );
+dst_tbl.TotalDuration = nansum( dst_tbl.Stop - dst_tbl.Start, 2 );
+
 if ( 1 )
   save( fullfile(project_directory, 'data/clip_table.mat'), 'dst_tbl' );
+end
+
+%%
+
+function ts = convert_clip_timestamps_to_seconds(ts)
+
+minute = floor( ts );
+sec = ts - minute;
+ts = minute * 60 + sec * 100;
+
 end

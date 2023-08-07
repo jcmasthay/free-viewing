@@ -49,4 +49,8 @@ starts = starts(1:num_segs);
 stops = stops(1:num_segs);
 store_ii = store_ii(1:num_segs);
 
+starts = cellfun( @(x) x(:), starts, 'un', 0 );
+stops = cellfun( @(x) x(:), stops, 'un', 0 );
+store_ii = cellfun( @(x) x(:), store_ii, 'un', 0 );
+
 end

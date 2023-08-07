@@ -1,39 +1,42 @@
-%%
+%%  clip info
 
 clip_table = shared_utils.io.fload( fullfile(project_directory, 'data/clip_table.mat') );
-clip_subset = clip_table(clip_table.VideoFilename == 'Monkey Thieves S2E2', :);
 
-fix_vars = { 'Start', 'Stop' };
-for i = 1:numel(fix_vars)
-  minute = floor( clip_subset.(fix_vars{i}) );
-  sec = clip_subset.(fix_vars{i}) - minute;
-  clip_subset.(fix_vars{i}) = minute * 60 + sec * 100;
-end
+%%  target 15 min of actual showing clips
 
-%%
+% TODO: Produce `target_subset` attempting to strike a balance between
+% affiliative and aggressive clips; also, within those, balance between
+% interaction-type (e.g. social v nonsocial, or species)
+target_subset = find( clip_table.VideoFilename == 'Monkey Thieves S2E2' );
+
+target_clips = clip_table(target_subset, :);
+
+%%  build blocks
+
+clip_dur = 10;
+vid_p = fullfile( project_directory, 'videos' );
+scram_vid_p = fullfile( vid_p, 'scrambled' );
+
+[A, B, C] = build_blocks( target_clips, clip_dur, vid_p, scram_vid_p );
+
+%%  run the task
+
+blocks = { A, B, C };
 
 win = ptb.Window( [0, 0, 1280, 720] );
 open( win );
 
-clip_dur = 10;
+for i = 1:numel(blocks)
+  
+block = blocks{i};
 
 err = [];
-try 
-  vid_src_p = fullfile( project_directory, 'videos/Monkey Thieves S2E2.avi' );
-
-  % start + stop times within respective clips
-  [start_ts, stop_ts] = to_clip_subsets( clip_subset.Start, clip_subset.Stop );
-  
-  for i = 1:numel(start_ts)
-    [starts, stops] = partition_clip_subsets( start_ts{i}, stop_ts{i}, clip_dur );
-    
-    % same video in this case for each start / stop time
-    vid_src_ps = repmat( {vid_src_p}, numel(starts), 1 );
-
-    video_task( win, vid_src_ps, starts, stops );
-  end
+try   
+  video_task( win, block.video_p, block.start, block.stop );
 catch err
-  %
+  break
+end
+
 end
 
 if ( ~isempty(err) )
