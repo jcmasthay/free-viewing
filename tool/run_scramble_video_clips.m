@@ -1,15 +1,17 @@
 use_single_specified_video = false;
+only_smallest_video = false;
 
 if ( use_single_specified_video )
   vid_ps = {'/Users/nick/source/changlab/jamie/fv_task/videos/clip_0.mp4.avi'};
 else
   vid_ps = shared_utils.io.find( fullfile(project_directory, 'videos'), '.avi' );
-  dirs = cellfun( @dir, vid_ps );
-  [~, min_s] = min( [dirs.bytes] );
-  vid_ps = vid_ps(min_s);
-end
 
-%
+  if ( only_smallest_video )
+    dirs = cellfun( @dir, vid_ps );
+    [~, min_s] = min( [dirs.bytes] );
+    vid_ps = vid_ps(min_s);
+  end
+end
 
 for i = 1:numel(vid_ps)
 
