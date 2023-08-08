@@ -15,6 +15,7 @@ use_reward = false;
 
 reward_dur_s = 0.2;
 reward_ipi_s = 2;  % inter-pulse-interval
+iti_dur_s = 2;
 
 el_interface = EyelinkInterface();
 el_interface.bypassed = ~use_eyelink;
@@ -47,7 +48,7 @@ try
       , @(frame) frame_sync_loop_cb(frame, vid_src_ps{i}, time_cb) ...
     );
     
-    iti( win, @task_loop, time_cb, rwd_cb, reward_ipi_s );
+    iti( win, @task_loop, time_cb, rwd_cb, reward_ipi_s, iti_dur_s );
   end
 catch err
   % error handled later
@@ -83,10 +84,8 @@ end
 
 end
 
-function iti(win, loop_cb, time_cb, rwd_cb, rwd_ipi)
+function iti(win, loop_cb, time_cb, rwd_cb, rwd_ipi, pause_time)
 
-% pause between clips
-pause_time = 5;
 t0 = time_cb();
 
 % reward timing

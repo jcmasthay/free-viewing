@@ -14,14 +14,14 @@ target_clips = clip_table(target_subset, :);
 %%  build blocks
 
 clip_dur = 10;
+
 vid_p = fullfile( project_directory, 'videos' );
 scram_vid_p = fullfile( vid_p, 'scrambled' );
 
-[A, B, C] = build_blocks( target_clips, clip_dur, vid_p, scram_vid_p );
+[As, Bs, Cs] = build_blocks( target_clips, clip_dur, vid_p, scram_vid_p );
+blocks = generate_randomized_miniblocks( As, Bs, Cs );
 
 %%  run the task
-
-blocks = { A, B, C };
 
 win = ptb.Window( [0, 0, 1280, 720] );
 open( win );
