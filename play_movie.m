@@ -1,4 +1,6 @@
-function play_movie(win, movie_file, start_times, end_times, loop_cb)
+function aborted = play_movie(win, movie_file, start_times, end_times, loop_cb)
+
+aborted = false;
 
 if ( isa(win, 'ptb.Window') )
   win = win.WindowHandle;
@@ -33,12 +35,21 @@ for ci = 1:num_segments
     if ( tex <= 0 )
       break
     end
+    
+    if ( ptb.util.is_esc_down )
+      aborted = true;
+      break
+    end
 
     Screen( 'DrawTexture', win, tex );
     Screen( 'Flip', win );
     Screen( 'Close', tex );
 
     played_frames = played_frames + 1;
+  end
+  
+  if ( aborted )
+    break
   end
 end
 

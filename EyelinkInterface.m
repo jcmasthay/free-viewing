@@ -13,11 +13,12 @@ classdef EyelinkInterface < handle
       obj.eyelink = ptb.sources.Eyelink();
     end
     
-    function initialize(obj)
+    function initialize(obj, data_p)
       if ( obj.bypassed )
         return
       end
       
+      obj.data_p = data_p;
       obj.has_file = false;
       file_args = {};
       
@@ -34,6 +35,7 @@ classdef EyelinkInterface < handle
         obj.data_file_p = fullfile( obj.data_p, obj.data_file_name );
       end
       
+      initialize( obj.eyelink );
       start_recording( obj.eyelink, file_args{:} );
     end
     
@@ -42,11 +44,11 @@ classdef EyelinkInterface < handle
         return
       end
       
+      stop_recording( obj.eyelink );
+      
       if ( obj.has_file )
         receive_file( obj.eyelink, obj.data_p );
       end
-      
-      shutdown( obj.eyelink );
     end
   end
 end
