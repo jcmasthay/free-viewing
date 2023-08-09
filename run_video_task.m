@@ -23,24 +23,34 @@ blocks = generate_randomized_miniblocks( As, Bs, Cs );
 
 %%  run the task
 
-win = ptb.Window( [0, 0, 1280, 720] );
+win = ptb.Window( [] );
+win.Index = 1;
+win.SkipSyncTests = true;
 open( win );
+
+inter_block_interval_s = 10;
 
 for i = 1:numel(blocks)
   
 block = blocks{i};
 
 err = [];
+did_abort = false;
 try   
-  video_task( win, block.video_p, block.start, block.stop );
+  did_abort = video_task( win, block.video_p, block.start, block.stop );
+  if ( did_abort )
+    break
+  end
 catch err
   break
 end
 
+pause( inter_block_interval_s );
+
 end
+
+close( win );
 
 if ( ~isempty(err) )
   rethrow( err );
 end
-
-close( win );
