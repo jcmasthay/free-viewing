@@ -1,5 +1,9 @@
 function [starts, stops, store_ii] = partition_clip_subsets(start_ts, stop_ts, clip_len)
 
+assert( isequal(floor(start_ts), start_ts), 'Expected integer start times.' );
+assert( isequal(floor(stop_ts), stop_ts), 'Expected integer stop times.' );
+assert( isequal(floor(clip_len), clip_len), 'Expected integer clip duration.' );
+
 total_dur = sum( stop_ts(:) - start_ts(:) );
 num_segs = floor( total_dur / clip_len );
 assert( num_segs > 0, 'Clip is too short: less than %d seconds.', clip_len );
@@ -20,7 +24,7 @@ while ( ii <= numel(start_ts) )
   stop_t = min( start_t + leftover, stop_ts(ii) );
   
   accum = stop_t - start_t;
-  leftover = leftover - accum;
+  leftover = max( 0, leftover - accum );
   
   if ( stop_t == stop_ts(ii) )
     offset = 0;
