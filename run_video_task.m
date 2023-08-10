@@ -5,7 +5,7 @@ dend_table = shared_utils.io.fload( fullfile(project_directory, 'data/dendro_tab
 
 %%  select story sequences targeting a specific total duration
 
-target_total_dur_s = 15 * 60;
+target_total_dur_s = 2 * 60;
 allowed_slop_s = 10;  % at most N seconds short of target_total_dur_s
 
 % target 50% affiliative stories, but allow proportional deviations up to X. 
@@ -13,11 +13,12 @@ allowed_slop_s = 10;  % at most N seconds short of target_total_dur_s
 % of stories will be affiliative.
 allowed_p_affil_imbalance = 0.1;
 
-mask = find( dend_table.affiliativeness ~= 'neutral' & clip_table.VideoFilename ~= "" );
+mask = find( dend_table.affiliativeness ~= 'neutral' & clip_table.VideoFilename == "Monkey Thieves S2E2" );
 % mask = 1:size(dend_table, 1);
 
-target_subset = mask(select_stories( ...
-  dend_table(mask, :), target_total_dur_s, allowed_slop_s, allowed_p_affil_imbalance));
+target_subset = mask;
+% target_subset = mask(select_stories( ...
+%   dend_table(mask, :), target_total_dur_s, allowed_slop_s, allowed_p_affil_imbalance));
 
 target_clips = [ clip_table(target_subset, :), dend_table(target_subset, :) ]
 
@@ -40,14 +41,17 @@ open( win );
 
 inter_block_interval_s = 10;
 
-for i = 1:numel(blocks)
+% change this number to run the next block
+block_indices = 1:4;
+
+for i = block_indices
   
 block = blocks{i};
 
 err = [];
 did_abort = false;
 try   
-  did_abort = video_task( win, block.video_p, block.start, block.stop );
+  did_abort = video_task( win, block.video_p, block.start, block.stop, block );
   if ( did_abort )
     break
   end
