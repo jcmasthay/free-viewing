@@ -1,4 +1,8 @@
-function aborted = play_movie(win, movie_file, start_times, end_times, loop_cb)
+function aborted = play_movie(win, movie_file, start_times, end_times, loop_cb, draw_cb)
+
+if ( nargin < 6 )
+  draw_cb = [];
+end
 
 aborted = false;
 
@@ -29,7 +33,9 @@ for ci = 1:num_segments
   end
 
   while played_frames < num_frames
-    loop_cb( start_t + played_frames / fps );
+    if ( ~isempty(loop_cb) )
+      loop_cb( start_t + played_frames / fps );
+    end
 
     tex = Screen( 'GetMovieImage', win, movie );
     if ( tex <= 0 )
@@ -42,6 +48,11 @@ for ci = 1:num_segments
     end
 
     Screen( 'DrawTexture', win, tex );
+    
+    if ( ~isempty(draw_cb) )
+      draw_cb( start_t + played_frames / fps );
+    end
+    
     Screen( 'Flip', win );
     Screen( 'Close', tex );
 
