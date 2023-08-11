@@ -1,4 +1,14 @@
-function did_abort = video_task(win, vid_src_ps, start_ts, stop_ts, src_table)
+function did_abort = video_task(win, vid_src_ps, start_ts, stop_ts, src_table, varargin)
+
+defaults = struct();
+defaults.iti_dur_s = 2;
+defaults.max_num_reward_pulses = 2;
+defaults.reward_ipi_s = 1;
+defaults.reward_dur_s = 0.2;
+defaults.use_eyelink = true;
+defaults.save_data = true;
+defaults.use_reward = true;
+params = shared_utils.general.parsestruct( defaults, varargin );
 
 did_abort = false;
 
@@ -13,14 +23,14 @@ proj_p = fileparts( which(mfilename) );
 [data_p, data_file_name] = data_file_paths( proj_p );
 shared_utils.io.require_dir( data_p );
 
-use_eyelink = true;
-save_data = true;
-use_reward = true;
+use_eyelink = params.use_eyelink;
+save_data = params.save_data;
+use_reward = params.use_reward;
 
-reward_dur_s = 0.2;
-reward_ipi_s = 1;  % inter-pulse-interval
-max_num_reward_pulses = 2;
-iti_dur_s = 2;
+reward_dur_s = params.reward_dur_s;
+reward_ipi_s = params.reward_ipi_s;  % inter-pulse-interval
+max_num_reward_pulses = params.max_num_reward_pulses;
+iti_dur_s = params.iti_dur_s;
 
 el_interface = EyelinkInterface();
 el_interface.bypassed = ~use_eyelink;
@@ -50,7 +60,7 @@ try
   for i = 1:numel(start_ts)
     did_abort = play_movie( ...
         win, vid_src_ps{i}, start_ts(i), stop_ts(i) ...
-      , @(frame) frame_sync_loop_cb(frame, vid_src_ps{i}, time_cb) ...
+      , @(frame) frame_sync_loop_cb(frame, i, time_cb) ...
     );
   
     if ( did_abort )
@@ -82,9 +92,9 @@ end
   local functions
 %}
 
-function frame_sync_loop_cb(frame, vid_p, time_cb)
+function frame_sync_loop_cb(frame, clip_index, time_cb)
   task_loop();
-  send_frame_info( el_sync, vid_p, frame, time_cb() );
+  send_frame_info( el_sync, clip_index, frame, time_cb() );
 end
 
 function task_loop()
