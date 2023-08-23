@@ -5,7 +5,7 @@ dend_table = shared_utils.io.fload( fullfile(project_directory, 'data/dendro_tab
 
 %%  select story sequences targeting a specific total duration
 
-target_total_dur_s = 15 * 60;
+target_total_dur_s = 3 * 60;
 allowed_slop_s = 10;  % at most N seconds short of target_total_dur_s
 use_all_masked_clips = false;
 
@@ -14,7 +14,7 @@ use_all_masked_clips = false;
 % of stories will be affiliative.
 allowed_p_affil_imbalance = 0.1;
 
-mask = find( dend_table.affiliativeness ~= 'neutral' & clip_table.VideoFilename ~= "" );
+mask = find( clip_table.VideoFilename ~= "" );
 % mask = 1:size(dend_table, 1);
 
 if ( use_all_masked_clips )
@@ -25,6 +25,7 @@ else
 end
 
 target_clips = [ clip_table(target_subset, :), dend_table(target_subset, :) ]
+target_clips.subset_index = target_subset(:);
 
 %%  build blocks
 
@@ -61,22 +62,33 @@ did_abort = false;
 
 for bi = 1:numel(mini_block_I)
   block = mini_block_set(mini_block_I{bi}, :);
-  [err, did_abort] = run_mini_block( win, block, 'iti_dur_s', iti_s );
+  [err, did_abort] = run_video_task_mini_block( win, block ...
+    , 'iti_dur_s', iti_s, 'target_clips', target_clips );
   if ( ~isempty(err) || did_abort )
     break
   end
   
   % pause between A, B, C
   if ( bi < numel(mini_block_I) )
-    pause( inter_mini_block_interval_s );
+    rewarded_break( inter_mini_block_interval_s ...
+      , 'max_num_reward_pulses', 4 ...  % max number of pulses
+      , 'reward_ipi_s', 2 ...           % interval between reward pulses
+      , 'reward_dur_s', 0.2 ...
+    );
   end
 end
 
-% pause between sets of {A, B, C}
-pause( inter_story_interval_s );
-
 if ( ~isempty(err) || did_abort )
   break
+end
+
+% pause between sets of {A, B, C}
+if ( i ~= block_indices(end) )
+  rewarded_break( inter_story_interval_s ...
+    , 'max_num_reward_pulses', 17 ...
+    , 'reward_ipi_s', 10 ...
+    , 'reward_dur_s', 0.2 ...
+  );
 end
 
 end
@@ -85,22 +97,4 @@ close( win );
 
 if ( ~isempty(err) )
   rethrow( err );
-end
-
-%%
-
-function [err, did_abort] = run_mini_block(win, block, varargin)
-
-err = [];
-did_abort = false;
-try   
-  did_abort = video_task( ...
-    win, block.video_p, block.start, block.stop, block, varargin{:} );
-  if ( did_abort )
-    return
-  end
-catch err
-  %
-end
-
 end

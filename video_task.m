@@ -8,6 +8,7 @@ defaults.reward_dur_s = 0.2;
 defaults.use_eyelink = true;
 defaults.save_data = true;
 defaults.use_reward = true;
+defaults.target_clips = [];
 params = shared_utils.general.parsestruct( defaults, varargin );
 
 did_abort = false;
@@ -18,6 +19,7 @@ assert( isequal(numel(vid_src_ps), numel(start_ts), numel(stop_ts)) ...
   , 'Expected 1 start and stop time per video clip file.' );
 assert( numel(start_ts) == size(src_table, 1) ...
   , 'Expected 1 clip table row per start time.' );
+assert( ~isempty(params.target_clips), 'Expected non-empty target clips.' );
 
 proj_p = fileparts( which(mfilename) );
 [data_p, data_file_name] = data_file_paths( proj_p );
@@ -48,6 +50,7 @@ rwd_interface = RewardInterface( ~use_reward );
 % gets the current time
 t0 = tic;
 time_cb = @() toc( t0 );
+t0_timestamp = datetime();
 
 % triggers reward
 rwd_cb = @() deliver_reward( rwd_interface, 1, reward_dur_s );
@@ -80,7 +83,7 @@ end
 shutdown( el_interface );
 
 if ( save_data )
-  file = make_data_file( el_sync, el_interface, src_table );
+  file = make_data_file( el_sync, el_interface, src_table, t0_timestamp, win, params );
   save( fullfile(data_p, data_file_name), 'file' );
 end
 
@@ -134,12 +137,16 @@ data_file_name = sprintf( '%s.mat', strrep(datestr(now), ':', '_') );
 
 end
 
-function data_file = make_data_file(el_sync, el_interface, src_table)
+function data_file = make_data_file(...
+  el_sync, el_interface, src_table, t0_timestamp, win, params)
 
 data_file = struct(...
     'edf_file_name', el_interface.data_file_name ...
   , 'edf_sync_times', get_sync_times(el_sync) ...
   , 'clip_table', src_table ...
+  , 'time0_timestamp', t0_timestamp ...
+  , 'params', params ...
+  , 'window', win ...
 );
 
 end
