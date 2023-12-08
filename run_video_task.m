@@ -5,7 +5,7 @@ dend_table = shared_utils.io.fload( fullfile(project_directory, 'data/dendro_tab
 
 %%  select story sequences targeting a specific total duration
 
-target_total_dur_s = 3 * 60;
+target_total_dur_s = 12 * 60;
 allowed_slop_s = 10;  % at most N seconds short of target_total_dur_s
 use_all_masked_clips = false;
 
@@ -15,6 +15,7 @@ use_all_masked_clips = false;
 allowed_p_affil_imbalance = 0.1;
 
 mask = find( clip_table.VideoFilename ~= "" );
+% mask = find( clip_table.VideoFilename == "Monkey Kingdom" );
 % mask = 1:size(dend_table, 1);
 
 if ( use_all_masked_clips )
@@ -73,7 +74,7 @@ for bi = 1:numel(mini_block_I)
     rewarded_break( inter_mini_block_interval_s ...
       , 'max_num_reward_pulses', 4 ...  % max number of pulses
       , 'reward_ipi_s', 2 ...           % interval between reward pulses
-      , 'reward_dur_s', 0.2 ...
+      , 'reward_dur_s', 0.1 ...
     );
   end
 end
@@ -87,7 +88,7 @@ if ( i ~= block_indices(end) )
   rewarded_break( inter_story_interval_s ...
     , 'max_num_reward_pulses', 17 ...
     , 'reward_ipi_s', 10 ...
-    , 'reward_dur_s', 0.2 ...
+    , 'reward_dur_s', 0.1 ...
   );
 end
 
