@@ -70,7 +70,9 @@ try
       break
     end
     
-    iti( win, @task_loop, time_cb, rwd_cb, reward_ipi_s, max_num_reward_pulses, iti_dur_s );
+    if ( iti_dur_s > 0 )
+      iti( win, @task_loop, time_cb, rwd_cb, reward_ipi_s, max_num_reward_pulses, iti_dur_s );
+    end
   end
 catch err
   % error handled later

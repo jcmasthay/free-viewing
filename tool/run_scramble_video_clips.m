@@ -1,8 +1,8 @@
-use_single_specified_video = false;
+use_single_specified_video = true;
 only_smallest_video = false;
 
 if ( use_single_specified_video )
-  vid_ps = {'/Users/nick/source/changlab/jamie/fv_task/videos/clip_0.mp4.avi'};
+  vid_ps = {'D:\data\changlab\jamie\free-viewing\videos\monkey_planet_take_2.avi'};
 else
   vid_ps = shared_utils.io.find( fullfile(project_directory, 'videos'), '.avi' );
 
