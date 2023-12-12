@@ -15,7 +15,8 @@ sets = { As, Bs, Cs };
 mini_blocks = cell( size(As, 1), 1 );
 
 for i = 1:numel(As)
-  curr_ord = ords(conds(i), :);
+  cond_ind = mod( i-1, size(ords, 1) ) + 1;
+  curr_ord = ords(conds(cond_ind), :);
   mini_blocks{i} = [ 
       sets{curr_ord(1)}{i}
       sets{curr_ord(2)}{i}

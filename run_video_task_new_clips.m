@@ -1,8 +1,12 @@
 %%  clip info
 
+% vid_p = fullfile( project_directory, 'videos' );
+vid_p = 'D:\data\changlab\jamie\free-viewing\videos';
+scram_vid_p = fullfile( vid_p, 'scrambled' );
+
 clip_table = shared_utils.io.fload( fullfile(project_directory, 'data/new_clip_table.mat') );
 
-target_subset = 6;
+target_subset = 1:7;
 target_clips = clip_table(target_subset, :);
 target_clips.subset_index = target_subset(:);
 
@@ -10,21 +14,23 @@ target_clips.subset_index = target_subset(:);
 
 clip_dur = 10;
 
-% vid_p = fullfile( project_directory, 'videos' );
-vid_p = 'D:\data\changlab\jamie\free-viewing\videos';
-scram_vid_p = fullfile( vid_p, 'scrambled' );
-
 [As, Bs, Cs] = build_blocks( target_clips, clip_dur, vid_p, scram_vid_p );
 Cs = Bs;
 blocks = generate_randomized_miniblocks( As, Bs, Cs );
 
 %%
 
-num_clips = sum( cellfun(@numel, mini_block_I) );
+session_index = 2;
 
-num_clips * clip_dur + ...
-  numel( block_indices ) * inter_story_interval_s + ...
-  numel( mini_block_I ) * inter_mini_block_interval_s
+st_table = shared_utils.io.fload( fullfile(project_directory, 'data/shot_transition_table.mat') );
+clip_table = shared_utils.io.fload( fullfile(project_directory, 'data/new_clip_table.mat') );
+
+sesh_I = findeach( st_table, 'session_index' );
+st_table = st_table(sesh_I{session_index}, :);
+[As, Bs, Cs] = build_shot_transition_blocks( st_table, vid_p, scram_vid_p );
+target_clips = clip_table(unique(st_table.clip_index, 'stable'), :);
+
+blocks = generate_randomized_miniblocks( As, Bs, Cs );
 
 %%  run the task
 
