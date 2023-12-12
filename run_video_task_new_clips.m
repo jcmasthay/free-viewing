@@ -1,26 +1,15 @@
 %%  clip info
 
-% vid_p = fullfile( project_directory, 'videos' );
-vid_p = 'D:\data\changlab\jamie\free-viewing\videos';
+vid_p = fullfile( project_directory, 'videos' );
+% vid_p = 'D:\data\changlab\jamie\free-viewing\videos';
 scram_vid_p = fullfile( vid_p, 'scrambled' );
 
 clip_table = shared_utils.io.fload( fullfile(project_directory, 'data/new_clip_table.mat') );
 
-target_subset = 1:7;
-target_clips = clip_table(target_subset, :);
-target_clips.subset_index = target_subset(:);
-
-%%  build blocks
-
-clip_dur = 10;
-
-[As, Bs, Cs] = build_blocks( target_clips, clip_dur, vid_p, scram_vid_p );
-Cs = Bs;
-blocks = generate_randomized_miniblocks( As, Bs, Cs );
-
 %%
 
-session_index = 2;
+% which day are we running?
+session_index = 7;
 
 st_table = shared_utils.io.fload( fullfile(project_directory, 'data/shot_transition_table.mat') );
 clip_table = shared_utils.io.fload( fullfile(project_directory, 'data/new_clip_table.mat') );
@@ -32,14 +21,19 @@ target_clips = clip_table(unique(st_table.clip_index, 'stable'), :);
 
 blocks = generate_randomized_miniblocks( As, Bs, Cs );
 
+source_vids = unique( st_table.VideoFilename );
+fprintf( '\n\nUnique videos:\n\n%s\n', strjoin(source_vids, '\n') );
+
 %%  run the task
 
-use_reward = false;
-use_eyelink = false;
+use_reward = true;
+use_eyelink = true;
 
-win = ptb.Window( [0, 0, 1280, 720] );
-win.Index = 0;
+% win = ptb.Window( [0, 0, 1280, 720] );
+% win.Index = 0;
 % win.Index = 2;
+win = ptb.Window( [] );
+win.Index = 1;
 win.SkipSyncTests = true;
 open( win );
 
