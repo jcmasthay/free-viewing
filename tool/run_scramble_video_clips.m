@@ -13,7 +13,15 @@ else
   end
 end
 
+% vid_ps = shared_utils.io.find( 'C:\Users\nick\source\changlab\jamie\free-viewing\tool', '.avi' );
+% vid_ps(3) = [];
+
+vid_ps = shared_utils.io.find( 'D:\data\changlab\jamie\free-viewing\videos\clips', '.mp4' );
+% vid_ps(3) = [];
+
 for i = 1:numel(vid_ps)
+  
+fprintf( '\n %d of %d', i, numel(vid_ps) );
 
 vid_p = vid_ps{i};
   
@@ -21,7 +29,12 @@ frame_scrambler = ptb.Reference();
 frame_scrambler.Value.frame_index = 1;
 
 dst_p = fullfile( fileparts(vid_p), 'scrambled' );
-make_video_clips( vid_p, dst_p, [], [], @(f) do_scramble(frame_scrambler, f) );
+
+try
+  make_video_clips( vid_p, dst_p, [], [], @(f) do_scramble(frame_scrambler, f) );
+catch err
+  warning( err.message );
+end
 
 end
 

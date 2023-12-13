@@ -9,6 +9,7 @@ defaults.use_eyelink = true;
 defaults.save_data = true;
 defaults.use_reward = true;
 defaults.target_clips = [];
+defaults.meta_data = [];
 params = shared_utils.general.parsestruct( defaults, varargin );
 
 did_abort = false;

@@ -82,8 +82,15 @@ is_monk_th = contains( dst_tbl.SourceMovie, 'Monkey Thieves' );
 clip_fnames(is_monk_th) = compose( "Monkey Thieves S%dE%d" ...
   , dst_tbl.Season(is_monk_th), dst_tbl.Episode(is_monk_th) );
 
-is_monk_planet = contains( dst_tbl.SourceMovie, 'Monkey Kingdom' );
+is_monk_planet = contains( dst_tbl.SourceMovie, 'Monkey Planet' );
 clip_fnames(is_monk_planet) = "monkey_planet_take_2";
+
+is_monk_king = contains( dst_tbl.SourceMovie, 'Monkey Kingdom' );
+clip_fnames(is_monk_king) = 'Monkey Kingdom';
+
+clip_fnames(contains(dst_tbl.SourceMovie, "https://www.youtube.com/watch?v=U89tw093s_Y")) = 'Bowerbird Woos Female with Ring  Worlds Weirdest';
+clip_fnames(contains(dst_tbl.SourceMovie, "https://www.youtube.com/watch?v=_H9TyXiXM2k")) = 'Odd Bird Seduction Techniques  Life Story  BBC Earth';
+clip_fnames(contains(dst_tbl.SourceMovie, "https://www.youtube.com/watch?v=bZ6ce3d43s8")) = 'Hornbill Date Night  Destination WILD'; 
 
 dst_tbl.VideoFilename = clip_fnames;
 
@@ -109,5 +116,7 @@ function ts = convert_clip_timestamps_to_seconds(ts)
 minute = floor( ts );
 sec = ts - minute;
 ts = minute * 60 + floor( sec * 100 );
+
+% ts = minute * 60 + (ts - floor(ts)) * 100;
 
 end

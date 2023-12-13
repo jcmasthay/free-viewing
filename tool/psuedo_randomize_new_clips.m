@@ -2,7 +2,7 @@ clip_table = shared_utils.io.fload( fullfile(project_directory, 'data', 'new_cli
 
 start_ts = clip_table.Start;
 stop_ts = clip_table.Stop;
-target_dur = 15 * 60;
+target_dur = 12 * 60;
 
 while ( true )
 
@@ -31,6 +31,15 @@ if ( max_delta_n >= 2 )
   continue
 end
 
+if ( 0 )
+planet_ind = find( contains(all_sources, 'Monkey Planet') );
+assert( numel(planet_ind) == 1 );
+num_planet = cellfun( @(x) sum(x == planet_ind), sources_per_session );
+if ( ~any(num_planet == 0) )
+  continue;
+end
+end
+
 % criteria met
 break
 
@@ -54,9 +63,28 @@ for i = 1:numel(pred_fs)
     , 'va', {'start', 'stop', 'identifier'}) ];
 end
 
+%%  monkey thieves use full video, others use clip files
+
+clip_mp4s = shared_utils.io.find( ...
+  'D:\data\changlab\jamie\free-viewing\videos\clips', '.mp4' );
+fnames = shared_utils.io.filenames( clip_mp4s );
+
+[miss_fnames, ia1] = setdiff( fnames(:), clip_table.Code );
+[miss_fnames, ia2, ic] = unique( ...
+  cellfun(@(x) x(~isstrprop(x, 'digit')), miss_fnames, 'un', 0) );
+
+miss_clips = setdiff( clip_table.Code, fnames(:) );
+source_vid = cellfun( ...
+  @(x) clip_table.SourceMovie(strcmp(clip_table.Code, x)), miss_clips );
+source_vid(~ismember(miss_clips, miss_fnames))
+
 %%  construct a table of shot transitions, properly ordered, for each session
 
+dr = 'D:\data\changlab\jamie\free-viewing';
+clip_ext = '.mp4';
+
 st_tbl = table();
+prefer_clip_video_files = true;
 
 for sesh_ind = 1:numel(clips_per_session)
   
@@ -64,51 +92,89 @@ clip_inds = clips_per_session{sesh_ind};
 clips_sesh = clip_table(clip_inds, :);
 
 sesh_st_tbl = table();
-success = true;
+
+% clip_ind = 4;
+for clip_ind = 1:numel(clip_inds)
+
+abs_clip_ind = clip_inds(clip_ind);
+curr_clip = clips_sesh(clip_ind, :);
+num_segs = find( ~isnan(curr_clip.Start), 1, 'last' );
+is_thieves = contains( curr_clip.SourceMovie, 'Monkey Thieves' );
+is_multi_part = num_segs > 1;
+
+base_vid_filename = curr_clip.VideoFilename;
+uses_mult_clips = false;
+uses_clip_files = false;
+
+if ( prefer_clip_video_files )
+  if ( is_thieves )
+    vid_file_p = fullfile(dr, 'videos', sprintf('%s.avi', curr_clip.VideoFilename) );
+  else
+    if ( is_multi_part )
+      pat = '%s1%s';  % first clip
+      uses_mult_clips = true;
+    else
+      pat = '%s%s';
+    end
+    base_vid_filename = string( curr_clip.Code );
+    vid_fname = sprintf( pat, string(curr_clip.Code), clip_ext );
+    vid_file_p = fullfile(dr, 'videos/clips', vid_fname );
+    uses_clip_files = true;
+  end
+else
+  vid_file_p = fullfile(dr, 'videos', sprintf('%s.avi', curr_clip.VideoFilename) );
+end
 
 try
-% clip_ind = 4;
-  for clip_ind = 1:numel(clip_inds)
-
-  abs_clip_ind = clip_inds(clip_ind);
-  curr_clip = clips_sesh(clip_ind, :);
-  num_segs = find( ~isnan(curr_clip.Start), 1, 'last' );
-
-  for s = 1:num_segs
-    search_id = string( curr_clip.Code );
-    if ( num_segs > 1 )
-      search_id = compose( "%s%d", search_id, s );
-    end
-
-    match_pred = pred_tbl.identifier == search_id;
-    % @TODO
-    assert( nnz(match_pred) > 0, 'No prediction file matched clip code "%s".', search_id );
-
-    keep_vars = setdiff( ...
-      clips_sesh.Properties.VariableNames, pred_tbl.Properties.VariableNames );
-
-    ones_per_st_tbl = ones( sum(match_pred), 1 );
-
-    curr_st_tbl = pred_tbl(match_pred, :);
-    curr_st_tbl.start = curr_st_tbl.start + curr_clip.Start(s);
-    curr_st_tbl.stop = curr_st_tbl.stop + curr_clip.Start(s);
-    curr_st_tbl.clip_index = ones_per_st_tbl * abs_clip_ind; 
-    curr_st_tbl.session_index = ones_per_st_tbl * sesh_ind;
-    curr_st_tbl = [ curr_st_tbl, repmat(curr_clip(:, keep_vars), size(curr_st_tbl, 1), 1) ];
-
-    sesh_st_tbl = [sesh_st_tbl; curr_st_tbl];
-  end
-
-  end
+  vr = VideoReader( vid_file_p );
 catch err
-  warning( err.message );
-  success = false;
+  fprintf( '\n Missing video: %s', vid_file_p );
+  rethrow( err );
+end
+fps = vr.FrameRate;
+
+for s = 1:num_segs
+  search_id = string( curr_clip.Code );
+  if ( num_segs > 1 )
+    search_id = compose( "%s%d", search_id, s );
+  end
+
+  match_pred = pred_tbl.identifier == search_id;
+  % @TODO
+  assert( nnz(match_pred) > 0, 'No prediction file matched clip code "%s".', search_id );
+  
+  assign_video_filename = base_vid_filename;
+  if ( uses_mult_clips )
+    assign_video_filename = sprintf( '%s%d', base_vid_filename, s );
+  end
+
+  keep_vars = setdiff( ...
+    clips_sesh.Properties.VariableNames, pred_tbl.Properties.VariableNames );
+
+  ones_per_st_tbl = ones( sum(match_pred), 1 );
+
+  curr_st_tbl = [ pred_tbl(match_pred, :) ...
+    , repmat(curr_clip(:, keep_vars), sum(match_pred), 1) ];
+  
+  curr_st_tbl.clip_index = ones_per_st_tbl * abs_clip_ind; 
+  curr_st_tbl.session_index = ones_per_st_tbl * sesh_ind;
+  
+  if ( uses_clip_files )
+    curr_st_tbl.start = curr_st_tbl.start / fps;
+    curr_st_tbl.stop = curr_st_tbl.stop / fps;
+    curr_st_tbl.VideoFilename(:) = assign_video_filename;
+  else
+    curr_st_tbl.start = curr_st_tbl.start / fps + curr_clip.Start(s);
+    curr_st_tbl.stop = curr_st_tbl.stop / fps + curr_clip.Start(s);
+  end
+  
+  sesh_st_tbl = [sesh_st_tbl; curr_st_tbl];
 end
 
-if ( success )
-  % only add successful sesssions
-  st_tbl = [ st_tbl; sesh_st_tbl ];
 end
+
+% only add successful sesssions
+st_tbl = [ st_tbl; sesh_st_tbl ];
 
 end
 
@@ -116,6 +182,7 @@ end
 
 if ( 1 )
   save( fullfile(project_directory, 'data', 'shot_transition_table.mat'), 'st_tbl' );
+  save( fullfile(project_directory, 'data', 'clips_per_session_table.mat'), 'clips_per_session' );
 end
 
 %%
